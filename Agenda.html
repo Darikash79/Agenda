@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda de Citas - Estudio de Uñas</title>
+  
+  <!-- ===== [PWA] Meta tags y links necesarios ===== -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Agenda Uñas">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <!-- ===== Fin sección PWA ===== -->
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background: #fff0f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      color: #444;
+      position: relative;
+    }
+    h1 {
+      color: #c71585;
+      margin-top: 20px;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .tab {
+      background: #ffc0cb;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 5px 10px;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .tab:hover {
+      background: #ffb6c1;
+    }
+    .tab-content {
+      display: none;
+      max-width: 800px;
+      width: 90%;
+      background: #fff;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .active {
+      display: block;
+    }
+    input, textarea, button, select {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+    button {
+      background: #ff69b4;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #ff1493;
+    }
+    .cita-card {
+      background: #fff0f5;
+      border-left: 5px solid #ff69b4;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .cita-card h3 {
+      margin: 0 0 5px;
+      color: #c71585;
+    }
+    .cita-card p {
+      margin: 3px 0;
+    }
+    .completada {
+      opacity: 0.7;
+      border-left-color: #4CAF50;
+    }
+    .completado-btn {
+      background: #4CAF50;
+      margin-top: 10px;
+    }
+    .completado-btn:hover {
+      background: #3e8e41;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .filtros {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .filtros button {
+      width: auto;
+      padding: 8px 15px;
+    }
+    .demo-banner {
+      background: #ffeb3b;
+      color: #000;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: black;
+    }
+    .demo-btn {
+      background: rgba(156, 39, 176, 0.7);
+      color: white;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      z-index: 100;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: auto;
+      min-width: 80px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .demo-btn:hover {
+      background: rgba(156, 39, 176, 0.9);
+      transform: scale(1.05);
+    }
+    .demo-btn.salir {
+      background: rgba(244, 67, 54, 0.7);
+    }
+    .demo-btn.salir:hover {
+      background: rgba(244, 67, 54, 0.9);
+    }
+    .salir-demo-btn {
+      background: #f44336;
+      margin-top: 10px;
+    }
+    .salir-demo-btn:hover {
+      background: #d32f2f;
+    }
+    /* === [WhatsApp] Estilos === */
+    .acciones-whatsapp {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .acciones-whatsapp button {
+      background: #25D366 !important;
+      color: white !important;
+      flex: 1;
+      min-width: 120px;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 8px !important;
+    }
+    .acciones-whatsapp button:hover {
+      background: #128C7E !important;
+    }
+    #whatsappModal .modal-content {
+      width: 90%;
+      max-width: 500px;
+    }
+    #mensajeWhatsApp {
+      width: 100%;
+      border: 2px solid #25D366;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .botones-modal-whatsapp {
+      display: flex;
+      gap: 10px;
+    }
+    .botones-modal-whatsapp button {
+      flex: 1;
+    }
+    .nota-whatsapp {
+      font-size: 12px;
+      color: #666;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Agenda 💅 Estudio de Uñas</h1>
+  
+  <!-- Modal para contraseña demo -->
+  <div id="demoModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Acceso al modo demo</h3>
+      <p>Ingresa la contraseña para activar el modo demo:</p>
+      <input type="password" id="demoPassword" placeholder="Contraseña">
+      <button onclick="verificarPassword()">Acceder</button>
+      <p id="errorPassword" style="color:red; display:none;">Contraseña incorrecta</p>
+    </div>
+  </div>
+
+  <!-- Modal de WhatsApp -->
+  <div id="whatsappModal" class="modal">
+    <div class="modal-content" style="width: 90%; max-width: 500px;">
+      <span class="close" onclick="cerrarModalWhatsApp()">&times;</span>
+      <h3 id="modalWhatsAppTitle">Enviar mensaje por WhatsApp</h3>
+      <textarea id="mensajeWhatsApp" rows="6" placeholder="Escribe tu mensaje aquí..."></textarea>
+      <div class="botones-modal-whatsapp">
+        <button onclick="enviarMensajeWhatsApp()">Enviar</button>
+        <button onclick="cerrarModalWhatsApp()">Cancelar</button>
+      </div>
+      <p class="nota-whatsapp">⚠️ El mensaje se abrirá en tu WhatsApp personal</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" onclick="mostrarTab('agendar')">Agendar</button>
+    <button class="tab" onclick="mostrarTab('agendadas')">Citas Agendadas</button>
+    <button class="tab" onclick="mostrarTab('ganancias')">Ganancias</button>
+  </div>
+
+  <div id="agendar" class="tab-content active">
+    <div id="demoBanner" class="demo-banner" style="display:none;">
+      MODO DEMO ACTIVADO - Los datos no se guardarán permanentemente
+      <button class="salir-demo-btn" onclick="desactivarModoDemo()">Salir del modo demo</button>
+    </div>
+    <form id="formularioCita">
+      <input type="text" id="nombre" placeholder="Nombre de la clienta" required />
+      <input type="tel" id="telefono" placeholder="Número de teléfono" required />
+      <input type="datetime-local" id="fechaHora" required />
+      <input type="number" id="monto" placeholder="Monto ($)" required step="0.01" min="0" />
+      <select id="servicio">
+        <option value="">Selecciona un servicio</option>
+        <option value="manicura">Manicura básica</option>
+        <option value="pedicura">Pedicura</option>
+        <option value="acrilicas">Uñas acrílicas</option>
+        <option value="gel">Uñas en gel</option>
+        <option value="esculpidas">Uñas esculpidas</option>
+        <option value="otro">Otro servicio</option>
+      </select>
+      <textarea id="notas" placeholder="Notas del diseño, color, etc."></textarea>
+      <button type="submit">Guardar cita 💅</button>
+    </form>
+  </div>
+
+  <div id="agendadas" class="tab-content">
+    <div id="demoBannerAgendadas" class="demo-banner" style="display:none;">
+      MODO DEMO ACTIVADO - Datos ficticios para pruebas
+    </div>
+    <h2>Citas Agendadas</h2>
+    <div class="filtros">
+      <button onclick="filtrarCitas('todas')">Todas</button>
+      <button onclick="filtrarCitas('pendientes')">Pendientes</button>
+      <button onclick="filtrarCitas('completadas')">Completadas</button>
+    </div>
+    <div id="listaCitas"></div>
+  </div>
+  
+  <div id="ganancias" class="tab-content">
+    <div id="demoBannerGanancias" class="demo-banner" style="display:none;">
+      MODO DEMO ACTIVADO - Estadísticas ficticias
+    </div>
+    <h2>Ganancias</h2>
+    <div id="resumenGanancias"></div>
+  </div>
+
+  <!-- Botón de demo flotante mejorado -->
+  <button class="demo-btn" id="botonDemo" onclick="activarModoDemo()">Demo</button>
+
+  <script>
+    // ===== [PWA] Service Worker Registration =====
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful');
+          })
+          .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+    // ===== Fin sección PWA =====
+
+    // Variables globales
+    let filtroActual = 'todas';
+    let modoDemo = false;
+    let citasDemo = [];
+    const PASSWORD = "admin"; // Contraseña para el modo demo
+    let citaWhatsAppActual = null;
+    let tipoMensajeWhatsApp = "";
+
+    // Elementos del modal
+    const modal = document.getElementById("demoModal");
+    const whatsappModal = document.getElementById("whatsappModal");
+    const span = document.getElementsByClassName("close")[0];
+    const botonDemo = document.getElementById("botonDemo");
+
+    // Función para mostrar pestañas
+    function mostrarTab(id) {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(id).classList.add('active');
+      
+      if (id === 'agendadas') {
+        mostrarCitas();
+      } else if (id === 'ganancias') {
+        mostrarGanancias();
+      }
+    }
+
+    // Función para mostrar las citas
+    function mostrarCitas() {
+      const contenedor = document.getElementById("listaCitas");
+      contenedor.innerHTML = "";
+      
+      let citas = modoDemo ? citasDemo : JSON.parse(localStorage.getItem("citas")) || [];
+      
+      // Aplicar filtro
+      if (filtroActual === 'pendientes') {
+        citas = citas.filter(c => c.estado !== 'completada');
+      } else if (filtroActual === 'completadas') {
+        citas = citas.filter(c => c.estado === 'completada');
+      }
+      
+      if (citas.length === 0) {
+        contenedor.innerHTML = `<p>No hay citas ${filtroActual === 'todas' ? 'agendadas' : filtroActual} todavía.</p>`;
+        return;
+      }
+      
+      // Ordenar por fecha
+      citas.sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora));
+      
+      citas.forEach((cita, index) => {
+        const div = document.createElement("div");
+        div.className = `cita-card ${cita.estado === 'completada' ? 'completada' : ''}`;
+        
+        // Asegurar que el monto sea un número
+        const monto = parseFloat(cita.monto) || 0;
+        const telefono = cita.telefono || '';
+        const nombre = cita.nombre || 'Sin nombre';
+        const fecha = cita.fechaHora ? new Date(cita.fechaHora).toLocaleString() : 'Sin fecha';
+        const servicio = obtenerNombreServicio(cita.servicio);
+        const notas = cita.notas || '—';
+        const estado = cita.estado === 'completada' ? '✅ Completada' : '⏳ Pendiente';
+        
+        div.innerHTML = `
+          <h3>${nombre} ${telefono ? `📞 <a href='tel:${telefono}'>Llamar</a>` : ''}</h3>
+          <p><strong>Fecha:</strong> ${fecha}</p>
+          ${servicio ? `<p><strong>Servicio:</strong> ${servicio}</p>` : ''}
+          <p><strong>Monto:</strong> $${monto.toFixed(2)}</p>
+          <p><strong>Notas:</strong> ${notas}</p>
+          <p><strong>Estado:</strong> ${estado}</p>
+          <div class="acciones-whatsapp">
+            <button onclick="abrirModalWhatsApp(${index}, 'recordatorio')">⏰ Recordatorio</button>
+            <button onclick="abrirModalWhatsApp(${index}, 'confirmacion')">✅ Confirmar</button>
+            <button onclick="abrirModalWhatsApp(${index}, 'personalizado')">✉️ Personalizado</button>
+          </div>
+          ${cita.estado !== 'completada' ? 
+            `<button class="completado-btn" onclick="marcarCompletada(${index})">Marcar como completada</button>` : ''}
+          <button onclick="eliminarCita(${index})">Eliminar cita</button>
+        `;
+        contenedor.appendChild(div);
+      });
+    }
+
+    // ===== [WhatsApp] Funciones =====
+    function abrirModalWhatsApp(index, tipo) {
+      const citas = modoDemo ? citasDemo : JSON.parse(localStorage.getItem("citas"));
+      citaWhatsAppActual = citas[index];
+      tipoMensajeWhatsApp = tipo;
+      
+      const titulo = document.getElementById("modalWhatsAppTitle");
+      const textarea = document.getElementById("mensajeWhatsApp");
+      
+      // Plantillas de mensajes
+      const plantillas = {
+        recordatorio: `¡Hola ${citaWhatsAppActual.nombre}! 🌸\nTe recordamos tu cita para el ${formatearFechaBonita(citaWhatsAppActual.fechaHora)}\n📍 Servicio: ${obtenerNombreServicio(citaWhatsAppActual.servicio)}\n💲 Monto: $${parseFloat(citaWhatsAppActual.monto).toFixed(2)}\n\n¿Necesitas hacer algún cambio?`,
+        confirmacion: `¡Hola ${citaWhatsAppActual.nombre}! 💅\nPor favor confirma tu cita para el ${formatearFechaBonita(citaWhatsAppActual.fechaHora)}\n\nResponde con:\n✅ Sí - Para confirmar\n❌ No - Para reagendar\n\n¡Gracias!`,
+        personalizado: `¡Hola ${citaWhatsAppActual.nombre}! 👋\n`
+      };
+      
+      titulo.textContent = {
+        recordatorio: "⏰ Recordatorio",
+        confirmacion: "✅ Confirmación",
+        personalizado: "✉️ Mensaje Personalizado"
+      }[tipo];
+      
+      textarea.value = plantillas[tipo];
+      whatsappModal.style.display = "block";
+    }
+
+    function cerrarModalWhatsApp() {
+      whatsappModal.style.display = "none";
+    }
+
+    function enviarMensajeWhatsApp() {
+      const mensaje = document.getElementById("mensajeWhatsApp").value;
+      if (!mensaje.trim()) {
+        alert("⚠️ Escribe un mensaje primero");
+        return;
+      }
+      
+      if (!citaWhatsAppActual?.telefono) {
+        alert("⚠️ No hay número de teléfono registrado");
+        return;
+      }
+      
+      // Eliminar caracteres no numéricos del teléfono
+      const telefonoLimpio = citaWhatsAppActual.telefono.replace(/\D/g, '');
+      const url = `https://wa.me/52${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+      
+      // Abrir en nueva pestaña
+      window.open(url, "_blank");
+      cerrarModalWhatsApp();
+    }
+
+    function formatearFechaBonita(fechaISO) {
+      const opciones = { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      };
+      return new Date(fechaISO).toLocaleDateString("es-MX", opciones);
+    }
+
+    // Función para filtrar citas
+    function filtrarCitas(filtro) {
+      filtroActual = filtro;
+      mostrarCitas();
+    }
+
+    // Función para obtener nombre del servicio
+    function obtenerNombreServicio(codigo) {
+      const servicios = {
+        'manicura': 'Manicura básica',
+        'pedicura': 'Pedicura',
+        'acrilicas': 'Uñas acrílicas',
+        'gel': 'Uñas en gel',
+        'esculpidas': 'Uñas esculpidas',
+        'otro': 'Otro servicio'
+      };
+      return servicios[codigo] || codigo;
+    }
+
+    // Función para marcar cita como completada
+    function marcarCompletada(index) {
+      if (modoDemo) {
+        citasDemo[index].estado = 'completada';
+      } else {
+        let citas = JSON.parse(localStorage.getItem("citas")) || [];
+        if (index >= 0 && index < citas.length) {
+          citas[index].estado = 'completada';
+          localStorage.setItem("citas", JSON.stringify(citas));
+        }
+      }
+      mostrarCitas();
+    }
+
+    // Función para eliminar cita
+    function eliminarCita(index) {
+      if (confirm("¿Estás seguro de eliminar esta cita?")) {
+        if (modoDemo) {
+          citasDemo.splice(index, 1);
+        } else {
+          let citas = JSON.parse(localStorage.getItem("citas")) || [];
+          citas.splice(index, 1);
+          localStorage.setItem("citas", JSON.stringify(citas));
+        }
+        mostrarCitas();
+      }
+    }
+
+    // Función para mostrar ganancias
+    function mostrarGanancias() {
+      const contenedor = document.getElementById("resumenGanancias");
+      const citas = modoDemo ? citasDemo : JSON.parse(localStorage.getItem("citas")) || [];
+      
+      // Calcular totales
+      const totalCitas = citas.length;
+      const completadas = citas.filter(c => c.estado === 'completada').length;
+      const pendientes = totalCitas - completadas;
+      
+      // Calcular montos (asegurando que sean números)
+      const totalGanancias = citas.reduce((sum, c) => sum + (parseFloat(c.monto) || 0), 0);
+      const gananciasCompletadas = citas
+        .filter(c => c.estado === 'completada')
+        .reduce((sum, c) => sum + (parseFloat(c.monto) || 0), 0);
+      const gananciasPendientes = totalGanancias - gananciasCompletadas;
+      
+      contenedor.innerHTML = `
+        <p>Total de citas: ${totalCitas}</p>
+        <p>• Completadas: ${completadas}</p>
+        <p>• Pendientes: ${pendientes}</p>
+        <p><strong>Ganancias totales:</strong> $${totalGanancias.toFixed(2)}</p>
+        <p>• Cobradas: $${gananciasCompletadas.toFixed(2)}</p>
+        <p>• Por cobrar: $${gananciasPendientes.toFixed(2)}</p>
+      `;
+    }
+
+    // Guardar nueva cita
+    document.getElementById("formularioCita").addEventListener("submit", function(e) {
+      e.preventDefault();
+      
+      // Obtener valores del formulario
+      const nombre = document.getElementById("nombre").value.trim();
+      const telefono = document.getElementById("telefono").value.trim();
+      const fechaHora = document.getElementById("fechaHora").value;
+      const monto = parseFloat(document.getElementById("monto").value);
+      const servicio = document.getElementById("servicio").value;
+      const notas = document.getElementById("notas").value.trim();
+      
+      // Validaciones
+      if (!nombre || !telefono || !fechaHora) {
+        alert("Por favor completa los campos obligatorios");
+        return;
+      }
+      
+      if (isNaN(monto) || monto <= 0) {
+        alert("Por favor ingresa un monto válido");
+        return;
+      }
+      
+      // Crear nueva cita
+      const nuevaCita = {
+        id: Date.now(),
+        nombre,
+        telefono,
+        fechaHora,
+        monto,
+        servicio,
+        notas,
+        estado: "pendiente",
+        fechaCreacion: new Date().toISOString()
+      };
+      
+      // Guardar según el modo
+      if (modoDemo) {
+        citasDemo.push(nuevaCita);
+      } else {
+        const citas = JSON.parse(localStorage.getItem("citas")) || [];
+        citas.push(nuevaCita);
+        localStorage.setItem("citas", JSON.stringify(citas));
+      }
+      
+      // Mostrar mensaje y resetear
+      alert("💖 Cita guardada exitosamente");
+      document.getElementById("formularioCita").reset();
+      mostrarTab('agendadas');
+    });
+
+    // Funciones para el modo demo
+    function activarModoDemo() {
+      if (modoDemo) {
+        desactivarModoDemo();
+        return;
+      }
+      modal.style.display = "block";
+    }
+
+    function verificarPassword() {
+      const password = document.getElementById("demoPassword").value;
+      if (password === PASSWORD) {
+        modoDemo = true;
+        document.getElementById("demoBanner").style.display = "block";
+        document.getElementById("demoBannerAgendadas").style.display = "block";
+        document.getElementById("demoBannerGanancias").style.display = "block";
+        
+        // Actualizar botón demo
+        botonDemo.textContent = "Salir Demo";
+        botonDemo.classList.add("salir");
+        
+        // Crear datos demo
+        crearDatosDemo();
+        
+        // Cerrar modal
+        modal.style.display = "none";
+        document.getElementById("errorPassword").style.display = "none";
+        document.getElementById("demoPassword").value = "";
+        
+        // Mostrar mensaje
+        alert("Modo demo activado. Los datos no se guardarán permanentemente.");
+        mostrarTab('agendadas');
+      } else {
+        document.getElementById("errorPassword").style.display = "block";
+      }
+    }
+
+    function desactivarModoDemo() {
+      modoDemo = false;
+      document.getElementById("demoBanner").style.display = "none";
+      document.getElementById("demoBannerAgendadas").style.display = "none";
+      document.getElementById("demoBannerGanancias").style.display = "none";
+      
+      // Restaurar botón demo
+      botonDemo.textContent = "Demo";
+      botonDemo.classList.remove("salir");
+      
+      // Mostrar datos reales
+      mostrarTab('agendadas');
+      alert("Modo demo desactivado. Ahora estás trabajando con datos reales.");
+    }
+
+    function crearDatosDemo() {
+      const servicios = ['manicura', 'pedicura', 'acrilicas', 'gel', 'esculpidas'];
+      const nombres = ['Ana', 'María', 'Luisa', 'Carmen', 'Sofía', 'Patricia', 'Laura'];
+      const apellidos = ['Gómez', 'López', 'Martínez', 'González', 'Rodríguez'];
+      
+      citasDemo = [];
+      
+      // Crear 10 citas demo
+      for (let i = 0; i < 10; i++) {
+        const dias = Math.floor(Math.random() * 30) + 1;
+        const horas = Math.floor(Math.random() * 10) + 9;
+        const minutos = Math.floor(Math.random() * 60);
+        
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() + dias);
+        fecha.setHours(horas, minutos, 0, 0);
+        
+        const nombreCompleto = `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
+        const telefono = `55${Math.floor(1000 + Math.random() * 9000)}${Math.floor(1000 + Math.random() * 9000)}`;
+        const servicio = servicios[Math.floor(Math.random() * servicios.length)];
+        const monto = Math.floor(100 + Math.random() * 400);
+        const estado = Math.random() > 0.7 ? 'completada' : 'pendiente';
+        
+        citasDemo.push({
+          id: Date.now() + i,
+          nombre: nombreCompleto,
+          telefono,
+          fechaHora: fecha.toISOString().slice(0, 16),
+          monto,
+          servicio,
+          notas: `Color: ${['rojo', 'rosa', 'nude', 'azul', 'negro'][Math.floor(Math.random() * 5)]}`,
+          estado,
+          fechaCreacion: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)).toISOString()
+        });
+      }
+    }
+
+    // Cerrar modal al hacer clic en la X
+    span.onclick = function() {
+      modal.style.display = "none";
+      document.getElementById("errorPassword").style.display = "none";
+      document.getElementById("demoPassword").value = "";
+    }
+
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+        document.getElementById("errorPassword").style.display = "none";
+        document.getElementById("demoPassword").value = "";
+      }
+      if (event.target == whatsappModal) {
+        whatsappModal.style.display = "none";
+      }
+    }
+
+    // Inicialización con datos de ejemplo
+    window.onload = function() {
+      if (!localStorage.getItem("citas")) {
+        const citasEjemplo = [
+          {
+            id: 1,
+            nombre: "María González",
+            telefono: "5512345678",
+            fechaHora: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+            monto: 350.00,
+            servicio: "acrilicas",
+            notas: "Uñas acrílicas francesa",
+            estado: "pendiente",
+            fechaCreacion: new Date().toISOString()
+          },
+          {
+            id: 2,
+            nombre: "Ana Martínez",
+            telefono: "5556789012",
+            fechaHora: new Date(Date.now() + 172800000).toISOString().slice(0, 16),
+            monto: 250.00,
+            servicio: "gel",
+            notas: "Gel color rojo",
+            estado: "pendiente",
+            fechaCreacion: new Date().toISOString()
+          }
+        ];
+        localStorage.setItem("citas", JSON.stringify(citasEjemplo));
+      }
+      
+      mostrarTab('agendar');
+    };
+  </script>
+</body>
+</html>
